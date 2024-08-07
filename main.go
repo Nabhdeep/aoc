@@ -8,6 +8,7 @@ import (
 	"advent/2022/day5"
 	"advent/2022/day6"
 	"advent/2022/day7"
+	"advent/2022/day8"
 	"errors"
 	"fmt"
 	"io"
@@ -85,6 +86,8 @@ func main() {
 			day6.Solve()
 		case day == 7:
 			day7.Solve()
+		case day == 8:
+			day8.Solve()
 		}
 	}
 }
