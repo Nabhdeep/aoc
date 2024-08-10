@@ -1,0 +1,149 @@
+package day102
+
+import (
+	readinput "advent/readInput"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+)
+
+func Solve() {
+	pathOfInputText := "./2022/day10/testinput.txt"
+	input := readinput.ReadFile(pathOfInputText)
+	// fmt.Println(strings.Split(input, "\n"))
+	// addxWait := []int{}
+	addx := 1
+	reg_X := 0
+	addxWaitRegister := make(map[string]int)
+	// iterateOnTape(&reg_X, addxWaitRegister, strings.Split(input, "\n"))
+	iterateOnTapeV2(&reg_X, &addx, strings.Split(input, "\n"))
+	iterateOnTapeV3(&reg_X, &addx, strings.Split(input, "\n"), &addxWaitRegister)
+	fmt.Printf("DAY 9 res1: -> %d\n", reg_X)
+	// fmt.Printf("DAY 9 res2: -> %d\n", res2)
+}
+
+func iterateOnTapeV2(reg_x *int, addx *int, input []string) {
+	cycle := 0
+	for i := 0; i < len(input); i++ {
+
+		op := strings.Split(input[i], " ")
+		// if cycle%20 == 0 || ((cycle+1)%20) == 0 || ((cycle+2)%20) == 0 {
+		// 	fmt.Printf("Inner -> %d , %v\n", cycle, addxWaitRegister)
+
+		// }
+		switch op[0] {
+		case "addx":
+			cycle += 1
+			cycleCheck(&cycle, reg_x, addx)
+			cycle += 1
+			cycleCheck(&cycle, reg_x, addx)
+			v, _ := strconv.Atoi(op[1])
+			(*addx) += v
+
+		case "noop":
+			cycle++
+			cycleCheck(&cycle, reg_x, addx)
+		}
+	}
+}
+
+func iterateOnTapeV3(reg_x *int, addx *int, input []string, addxWait *map[string]int) {
+	cycle := 0
+	screen := [][]string{{"."}, {"."}, {"."}, {"."}, {"."}, {"."}}
+	for i := 0; i < len(input); i++ {
+
+		op := strings.Split(input[i], " ")
+		// if cycle%20 == 0 || ((cycle+1)%20) == 0 || ((cycle+2)%20) == 0 {
+		// 	fmt.Printf("Inner -> %d , %v\n", cycle, addxWaitRegister)
+
+		// }
+		switch op[0] {
+		case "addx":
+			key := fmt.Sprintf("%d-%v", i, input[i])
+			(*addxWait)[key] = 2
+			cycle += 1
+			(*reg_x) += checkStatus(addxWait)
+			drawCycle(&cycle, reg_x, &screen)
+			cycle += 1
+			(*reg_x) += checkStatus(addxWait)
+			drawCycle(&cycle, reg_x, &screen)
+
+			v, _ := strconv.Atoi(op[1])
+			(*addx) += v
+
+		case "noop":
+			cycle++
+			drawCycle(&cycle, reg_x, &screen)
+		}
+	}
+	for s := range screen {
+		fmt.Println(screen[s])
+	}
+}
+func drawCycle(cycle *int, reg_x *int, screen *[][]string) {
+	fmt.Printf("Cycle: %d , Reg_X: %d \n", (*cycle), (*reg_x))
+	switch {
+	case (*cycle) <= 40:
+		litPixel(cycle, reg_x, screen, 0)
+	case (*cycle) > 40 && (*cycle) <= 80:
+		litPixel(cycle, reg_x, screen, 1)
+	case (*cycle) > 80 && (*cycle) <= 120:
+		litPixel(cycle, reg_x, screen, 2)
+	case (*cycle) > 120 && (*cycle) <= 160:
+		litPixel(cycle, reg_x, screen, 3)
+	case (*cycle) > 160 && (*cycle) <= 200:
+		litPixel(cycle, reg_x, screen, 4)
+	case (*cycle) > 201 && (*cycle) <= 240:
+		litPixel(cycle, reg_x, screen, 5)
+	}
+}
+
+func litPixel(cycle *int, reg_x *int, screen *[][]string, idx int) {
+	fmt.Println((*reg_x), (*cycle), idx)
+	if int(math.Abs(float64(*reg_x)-float64(*cycle))) == 0 || int(math.Abs(float64(*reg_x)-float64(*cycle))) == 1 || int(math.Abs(float64(*reg_x)-float64(*cycle))) == 2 {
+		(*screen)[idx] = append((*screen)[idx], "#")
+	} else {
+		(*screen)[idx] = append((*screen)[idx], ".")
+	}
+}
+
+func cycleCheck(cycle *int, reg_x *int, addx *int) {
+	if ((*cycle)/20)%2 == 1 && ((*cycle)%20) == 0 {
+		// fmt.Printf("CYCYLE NUMBER => %d , %d\n", *cycle, *addx)
+		(*reg_x) += (*addx) * (*cycle)
+		// fmt.Printf("CURR -> %d \n", (*reg_x))
+		fmt.Println()
+	}
+}
+func cycleCheckV2(cycle *int, reg_x *int, addx *int) {
+	if ((*cycle)/20)%2 == 1 && ((*cycle)%20) == 0 {
+		// fmt.Printf("CYCYLE NUMBER => %d , %d\n", *cycle, *addx)
+		(*reg_x) += (*addx) * (*cycle)
+		// fmt.Printf("CURR -> %d \n", (*reg_x))
+		fmt.Println()
+	}
+}
+func checkStatus(addxWaitRegister *map[string]int) int {
+	var res int
+	if len((*addxWaitRegister)) == 0 {
+		return res
+	}
+	fmt.Println((*addxWaitRegister))
+	for key, value := range *addxWaitRegister {
+		parts := strings.Split(key, ":")
+		if value <= 0 {
+			op := strings.Split(parts[0], " ")
+			// Now key_parts is []string{"addx", "16"}
+			// You can access elements like this:
+			value, _ := strconv.Atoi(op[1])
+			// fmt.Println(value)
+			delete(*addxWaitRegister, key)
+			res += value
+		} else {
+			(*addxWaitRegister)[key] = (*addxWaitRegister)[key] - 1
+		}
+	}
+	// fmt.Println(res)
+	return res
+}
