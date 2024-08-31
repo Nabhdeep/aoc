@@ -9,6 +9,7 @@ import (
 	"advent/2022/day14"
 	"advent/2022/day15"
 	"advent/2022/day16"
+	"advent/2022/day17"
 	"advent/2022/day2"
 	"advent/2022/day3"
 	"advent/2022/day4"
@@ -112,6 +113,8 @@ func main() {
 			day15.Solve()
 		case day == 16:
 			day16.Solve()
+		case day == 17:
+			day17.Solve()
 		}
 	}
 }
