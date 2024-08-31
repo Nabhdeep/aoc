@@ -2,13 +2,34 @@ package day17
 
 import (
 	readinput "advent/readInput"
+	"strconv"
 	"strings"
 )
 
+// For part 2 find out the first cycle
+// {+ 1,1,6,3,3,3,3 585} => [[101 156] [1816 2772] [3531 5388] [5246 8004]]
+// intialRocks = 101
+// intialHeight = 156
+// cycleLen = delta of arr[1][0]-arr[0][0] = 1715
+// cycyleHeight = delta of height arr[1][1] - arr[0][1]
+// fullLoops = (1000000000000 - initialRock) / cycleLen
+// height = initial_height + (fullLoops *cycle_height)
+// remain_cycle = (1000000000000 - initialRock) % cycleLen
+// run the algo for the remain_cycle + initalRock
+// ans = height + (algo ans - initial_height)
 type rock struct {
 	typeRock string
 	edges    [][]int
 }
+
+type memoKey struct {
+	typeRock string
+	topStack string
+	jetIndex int
+}
+
+// rock , height
+var cache = make(map[memoKey][][2]int)
 
 var arrRock = []rock{
 
@@ -65,19 +86,35 @@ func startTetris(arrRocks []rock, jetStream []string) int {
 	jetLen := len(jetStream)
 
 	for round < 2022 {
-		i = i % rockLen
-		jet = jet % jetLen
+		i_idx := i % rockLen
+		jet_idx := jet % jetLen
+		//cache
+		key := memoKey{
+			typeRock: arrRocks[i_idx].typeRock,
+			topStack: getTopProfile(maxY),
+			jetIndex: jet_idx,
+		}
 
+		if _, ok := cache[key]; ok {
+			cache[key] = append(cache[key], [2]int{round, maxY})
+
+			// if len(cache[key]) > 3 {
+			// 	fmt.Println(key, "=>", cache[key])
+			// 	return 0
+			// }
+		} else {
+			cache[key] = [][2]int{{round, maxY}}
+		}
 		// start
-		if prev_i != i {
-			currRock = deepCopy(arrRocks[i].edges)
+		if prev_i != i_idx {
+			currRock = deepCopy(arrRocks[i_idx].edges)
 			spawnRock(&currRock, maxY)
-			prev_i = i
+			prev_i = i_idx
 		}
 		// fmt.Println("Before jet push:")
 		// printGrid(maxY, currRock)
 		//JET push
-		jetPush(&currRock, jetStream[jet])
+		jetPush(&currRock, jetStream[jet_idx])
 
 		// fmt.Println("After jet push:")
 		// printGrid(maxY, currRock)
@@ -102,6 +139,20 @@ func startTetris(arrRocks []rock, jetStream []string) int {
 	return maxY
 }
 
+func getTopProfile(maxY int) string {
+	profile := [7]string{}
+	maxDepth := 20 // Adjust this value as needed
+	for x := 0; x < 7; x++ {
+		for y := maxY; y >= max(0, maxY-maxDepth); y-- {
+			if hugeRock[[2]int{y, x}] {
+				num := strconv.Itoa(maxY - y)
+				profile[x] = num
+				break
+			}
+		}
+	}
+	return strings.Join(profile[:], ",")
+}
 func spawnRock(r *[][]int, maxY int) {
 
 	for _, s := range *r {
