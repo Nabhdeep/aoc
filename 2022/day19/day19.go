@@ -141,7 +141,7 @@ func startFactory(bps []blueprint) {
 	totalQualityLevel := 0
 	for i, bp := range bps {
 		cache = make(map[string]int)
-		maxGeodes := dfs(state{}.new(), 32, bp)
+		maxGeodes := dfs(state{}.new(), 24, bp)
 		qualityLevel := (i + 1) * maxGeodes
 		totalQualityLevel += qualityLevel
 		fmt.Printf("Blueprint %d: Max Geodes = %d, Quality Level = %d\n", i+1, maxGeodes, qualityLevel)
@@ -160,13 +160,6 @@ func dfs(s state, t int, bp blueprint) int {
 	}
 
 	maxGeode := s.geode + s.geode_robot*t
-	potentialGeodes := maxGeode
-	for i := 0; i < t; i++ {
-		potentialGeodes += i
-	}
-	if potentialGeodes <= maxGeode {
-		return maxGeode
-	}
 	// Try building each type of robot
 	if s.ore >= bp.geode[0] && s.obsidian >= bp.geode[1] {
 		newState := s.buildGeodeRobot(bp)
