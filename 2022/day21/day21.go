@@ -19,6 +19,14 @@ type ConstMonkey struct {
 
 var monkeyMap = make(map[string]any)
 
+type Expression struct {
+	isNum bool
+	left  *Expression
+	right *Expression
+	num   int
+	op    string
+}
+
 func Solve() {
 
 	pathOfInputText := "./2022/day21/input.txt"
@@ -29,13 +37,13 @@ func Solve() {
 	res := findRootRes("root")
 	fmt.Println("RES . day21 ", res)
 
-	// root, _ := monkeyMap["root"].(OpMonkey)
+	root, _ := monkeyMap["root"].(OpMonkey)
+	left := findRootResV3(root.v1)
+	right := findRootResV3(root.v2)
+	r := evaluateExpression(right)
+	ans := solveLHS(left, r)
 
-	// l := findRootRes(root.v1)
-	// r := findRootRes(root.v2) // side which has humn in leaf node
-
-	right := binarySearch()
-	fmt.Println("RES . day21 ", right)
+	fmt.Println(left, r, ans)
 }
 
 func parseInput(input []string) {
@@ -50,6 +58,119 @@ func parseInput(input []string) {
 		}
 	}
 
+}
+
+func findRootResV3(node_name string) *Expression {
+	node := monkeyMap[node_name]
+	// fmt.Println(node)
+	if node_name == "humn" {
+		return &Expression{isNum: false, num: -2}
+	}
+	switch n := node.(type) {
+	case ConstMonkey:
+		return &Expression{isNum: true, num: n.num}
+	case OpMonkey:
+		v1 := findRootResV3(n.v1)
+		v2 := findRootResV3(n.v2)
+		switch n.op {
+		case "+":
+			return &Expression{left: v1, right: v2, op: "+"}
+		case "*":
+			return &Expression{left: v1, right: v2, op: "*"}
+		case "/":
+			return &Expression{left: v1, right: v2, op: "/"}
+		case "-":
+			return &Expression{left: v1, right: v2, op: "-"}
+		}
+	}
+	return &Expression{isNum: false, num: -1}
+}
+
+func evaluateExpression(expr *Expression) int {
+	if expr.isNum {
+		return expr.num
+	}
+
+	leftVal := evaluateExpression(expr.left)
+	rightVal := evaluateExpression(expr.right)
+
+	switch expr.op {
+	case "+":
+		return leftVal + rightVal
+	case "*":
+		return leftVal * rightVal
+	case "/":
+		return leftVal / rightVal
+	case "-":
+		return leftVal - rightVal
+	default:
+		fmt.Printf("Unexpected operator: %s\n", expr.op)
+		return 0
+	}
+}
+
+func solveLHS(expr *Expression, rhs int) int {
+
+	if !expr.isNum && expr.num == -2 {
+		// This is the "humn" node
+		fmt.Println("RHS", rhs)
+		return rhs
+	}
+
+	leftIsNum := expr.left.isNum
+	rightIsNum := expr.right.isNum
+	fmt.Println(expr, expr.left, expr.right)
+
+	var knownVal int
+	var unknownExpr *Expression
+
+	if leftIsNum && rightIsNum {
+		switch expr.op {
+		case "+":
+
+			return rhs - (expr.left.num + expr.right.num)
+		case "*":
+			return rhs / (expr.left.num * expr.right.num)
+		case "-":
+			return rhs - (expr.left.num - expr.right.num)
+		case "/":
+			return (rhs / expr.left.num) * expr.right.num
+		}
+
+	} else if !leftIsNum && !rightIsNum {
+		// Both sides are non-numeric, solve right side first, then use that result for left side
+		leftResult := solveLHS(expr.left, rhs)
+		return solveLHS(expr.right, leftResult)
+	} else if leftIsNum {
+		knownVal = expr.left.num
+		unknownExpr = expr.right
+	} else {
+		knownVal = expr.right.num
+		unknownExpr = expr.left
+	}
+	fmt.Println("KNOWN VAL=>>>", knownVal, expr.op, rhs, leftIsNum)
+
+	switch expr.op {
+	case "+":
+		return solveLHS(unknownExpr, rhs-knownVal)
+	case "*":
+		println("============", rhs/knownVal, leftIsNum)
+		return solveLHS(unknownExpr, rhs/knownVal)
+	case "-":
+		if leftIsNum {
+			return solveLHS(unknownExpr, rhs-knownVal)
+		} else {
+			return solveLHS(unknownExpr, rhs+knownVal)
+		}
+	case "/":
+		if leftIsNum {
+			return solveLHS(unknownExpr, knownVal/rhs)
+		} else {
+			return solveLHS(unknownExpr, rhs*knownVal)
+		}
+	}
+
+	return 1
 }
 
 func findRootRes(node_name string) int {
@@ -75,6 +196,7 @@ func findRootRes(node_name string) int {
 	return 0
 }
 
+// Tired but facing int overflow bugs working with testinput
 func binarySearch() int {
 	lo := 0
 	hi := 1000000000000000
