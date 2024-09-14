@@ -13,8 +13,9 @@ func Solve() {
 	input := readinput.ReadFile(pathOfInputText)
 	splitInput := strings.Split(input, "\n")
 	board, moves := parseInput(splitInput)
-	res := moveOnBoard(board, moves)
-	fmt.Println("RES day", res)
+	// res := moveOnBoard(board, moves)
+	res2 := moveOnBoardV2(board, moves)
+	fmt.Println("RES day", res2)
 }
 
 func parseInput(input []string) ([][]string, []string) {
@@ -122,6 +123,120 @@ func moveOnBoard(board [][]string, moves []string) int {
 
 	}
 	return (1000 * (currPos[0] + 1)) + (4 * (currPos[1] + 1)) + (dirPassMap[currFacing])
+}
+
+func moveOnBoardV2(board [][]string, moves []string) int {
+	currPos := findStartingPos(board)
+	currFacing := ""
+	for _, move := range moves {
+		arrMove := strings.Split(move, "-")
+		steps, dir := arrMove[0], arrMove[1]
+		numSteps, _ := strconv.Atoi(steps)
+
+		if currFacing == "" {
+			currFacing = dir
+		} else {
+			currFacing = nextFace(currFacing, dir)
+		}
+		saveFacing := currFacing
+		for i := 0; i < numSteps; i++ {
+			nextPos := [2]int{currPos[0] + dirMap[currFacing].nr, currPos[1] + dirMap[currFacing].nc}
+			//wrap around
+
+			nextPos[0], nextPos[1], currFacing = wrapCube(nextPos[0], nextPos[1], currFacing)
+
+			fmt.Println(nextPos, currFacing, board[nextPos[0]][nextPos[1]])
+
+			if board[nextPos[0]][nextPos[1]] == "#" {
+				currFacing = saveFacing
+				break
+			}
+			// 35289
+			// 15266
+			currPos = nextPos
+			fmt.Println(i)
+
+		}
+
+	}
+
+	fmt.Println(currPos)
+	return (1000 * (currPos[0] + 1)) + (4 * (currPos[1] + 1)) + (dirPassMap[currFacing])
+}
+
+func wrapCube(nr int, nc int, currFace string) (int, int, string) {
+	// fmt.Println("PREV", nr, nc, currFace)
+	if nr < 0 && nc >= 50 && nc < 100 && currFace == "U" {
+		nr, nc = nc+100, 0
+		return nr, nc, "R"
+	} else if nc < 0 && nr >= 150 && nr < 200 && currFace == "L" {
+		nr, nc = 0, nr-100
+		// nc = nr - 100
+		// nr = 0
+		return nr, nc, "D"
+	} else if nr < 0 && nc >= 100 && nc < 150 && currFace == "U" {
+		// nr = 199
+		// nc = nc - 100
+		nr, nc = 199, nc-100
+		return nr, nc, "U"
+	} else if nr >= 200 && nc >= 0 && nc < 50 && currFace == "D" {
+		// nr = 0
+		// nc = nc + 100
+		nr, nc = 0, nc+100
+		return nr, nc, "D"
+	} else if nc >= 150 && nr >= 0 && nr < 50 && currFace == "R" {
+		// nr = 149 - nr
+		// nc = 99
+		nr, nc = 149-nr, 99
+		return nr, nc, "L"
+	} else if nc == 100 && nr >= 100 && nr < 150 && currFace == "R" {
+		// nr = 149 - nr
+		// nc = 149
+		nr, nc = 149-nr, 149
+		return nr, nc, "L"
+	} else if nr == 50 && nc >= 100 && nc < 150 && currFace == "D" {
+		// nr = nc - 50
+		// nc = 99
+		nr, nc = nc-50, 99
+		return nr, nc, "L"
+	} else if nc == 100 && nr >= 50 && nr < 100 && currFace == "R" {
+		// nr = 49
+		// nc = nr + 50
+		nr, nc = 49, nr+50
+		return nr, nc, "U"
+	} else if nr == 150 && nc >= 50 && nc < 100 && currFace == "D" {
+		// nr = nc + 100
+		// nc = 49
+		nr, nc = nc+100, 49
+		return nr, nc, "L"
+	} else if nc == 50 && nr >= 150 && nr < 200 && currFace == "R" {
+		// nr = 149
+		// nc = nr - 100
+		nr, nc = 149, nr-100
+		return nr, nc, "U"
+	} else if nr == 99 && nc >= 0 && nc < 50 && currFace == "U" {
+		// nr = nc + 50
+		// nc = 50
+		nr, nc = nc+50, 50
+		return nr, nc, "R"
+	} else if nc == 49 && nr >= 50 && nr < 100 && currFace == "L" {
+		// nr = 100
+		// nc = nr - 50
+		nr, nc = 100, nr-50
+		return nr, nc, "D"
+	} else if nc == 49 && nr >= 0 && nr < 50 && currFace == "L" {
+		// nr = 149 - nr
+		// nc = 0
+		nr, nc = 149-nr, 0
+		return nr, nc, "R"
+	} else if nc < 0 && nr >= 100 && nr < 150 && currFace == "L" {
+		// nr = 149 - nr
+		// nc = 50
+		nr, nc = 149-nr, 50
+		return nr, nc, "R"
+	}
+
+	return nr, nc, currFace
 }
 
 func findStartingPos(board [][]string) [2]int {
